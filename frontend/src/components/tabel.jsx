@@ -1,6 +1,6 @@
 import { IoIosArrowDown } from "react-icons/io";
 import { AiFillLike } from "react-icons/ai";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import axios from "axios"
 import { useQuery } from "@tanstack/react-query";
 import {useSearchParams} from "react-router-dom"
@@ -40,15 +40,28 @@ function Tabel() {
     });
 
      // skroling
+    const loadingRef = useRef(false);
+
+    useEffect(() => {
+        loadingRef.current = loading;
+    }, [loading]);
+
     const handleScroll = () => {
-        if (loading) return;
+        if (loadingRef.current) return;
         const scrollTop = window.scrollY;
         const windowHeight = window.innerHeight;
         const fullHeight = document.documentElement.scrollHeight;
+
         if (scrollTop + windowHeight >= fullHeight - 100) {
             loadMoreItems();
         }
     };
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
     const loadMoreItems = () => {
         setLoading(true);
         setTimeout(() => {
@@ -56,10 +69,6 @@ function Tabel() {
             setLoading(false);
         }, 2000); 
     };
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-      }, [loading]);
   return (
     <div className="px-[20px] pt-[350px] sm:pt-[110px] overflow-x-auto">
         <table className="w-full bg-[#fff]">
