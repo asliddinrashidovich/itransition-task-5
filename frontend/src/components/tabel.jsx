@@ -1,19 +1,32 @@
 import { IoIosArrowDown } from "react-icons/io";
 import { AiFillLike } from "react-icons/ai";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import axios from "axios"
 import { useQuery } from "@tanstack/react-query";
+import {useSearchParams} from "react-router-dom"
+import {ClipLoader} from "react-spinners"
+
+const API = import.meta.env.VITE_BOOK_API
 
 function Tabel() {
     const [tabs, setTabs] = useState(null)
+    const [searchParams] = useSearchParams()
+    const [loading, setLoading] = useState(false);
+    const [countSkroll, setCountScoll] = useState(20)
     
+    const lang = searchParams.get('lang') || "en-US"
+    const like = searchParams.get('like') || 1
+    const seed = searchParams.get('seed') || 40
+    const review = searchParams.get('reviews') || 1
+
     function toggleExpand(id) {
         setTabs(prev => (prev == id ? null : id))
     }
 
+
     async function getData() {
         try {
-            const res = await axios.get('http://localhost:3000/api/books?seed=42&locale=de-DE&likes=3.5&reviews=4.7&page=0')
+            const res = await axios.get(`${API}/api/books?seed=${seed}&locale=${lang}&likes=${like}&reviews=${review}&count=${countSkroll}&page=0`)
             return res.data
         }
         catch(err) {
@@ -22,31 +35,55 @@ function Tabel() {
     }
 
     const { data: books} = useQuery({
-        queryKey: ["data"],
+        queryKey: ["data", seed, like, review, lang, countSkroll],
         queryFn: getData,
     });
-    console.log(books)
+
+     // skroling
+    const handleScroll = () => {
+        if (loading) return;
+        const scrollTop = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const fullHeight = document.documentElement.scrollHeight;
+        if (scrollTop + windowHeight >= fullHeight - 100) {
+            loadMoreItems();
+        }
+    };
+    const loadMoreItems = () => {
+        setLoading(true);
+        setTimeout(() => {
+            setCountScoll(prev => prev += 10)
+            setLoading(false);
+        }, 2000); 
+    };
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+      }, [loading]);
   return (
-    <div className="px-[20px] pt-[130px] ">
+    <div className="px-[20px] pt-[350px] sm:pt-[110px] overflow-x-auto">
         <table className="w-full bg-[#fff]">
-            <thead>
-                <tr className="border-b-[2px] border-[#444]">
-                    <td className="min-w-[20px] max-w-[20px]"></td>
+            <thead className="sticky top-0 bg-[#fff] z-10">
+                <tr className="border-b-[2px] border-[#444] ">
+                    <td className="min-w-[40px] text-[#fff]">.</td>
                     <td className="min-w-[50px] text-[17px] py-[5px] font-[700]">#</td>
                     <td className="min-w-[200px] text-[17px] py-[5px] font-[700]">ISBN</td>
-                    <td className="min-w-[100px] text-[17px] py-[5px] font-[700]">Title</td>
-                    <td className="min-w-[100px] text-[17px] py-[5px] font-[700]">Author(s)</td>
-                    <td className="min-w-[100px] text-[17px] py-[5px] font-[700]">Publisher</td>
+                    <td className="min-w-[200px] text-[17px] py-[5px] font-[700]">Title</td>
+                    <td className="min-w-[200px] text-[17px] py-[5px] font-[700]">Author(s)</td>
+                    <td className="min-w-[200px] text-[17px] py-[5px] font-[700]">Publisher</td>
                 </tr>
             </thead>
-            <thead>
+            <tbody>
                 {books?.books?.map(item => (
                     <Fragment key={item.index}>
                         <tr onClick={() => toggleExpand(item.index)}  className={`border-y-[1px] cursor-pointer border-[#a9a9a9] ${tabs == item.index ? 'bg-[#d2e1fc]' : 'bg-transparent'}`}>
-                            <td className="cursor-pointer text-center"><IoIosArrowDown className="text-center mx-auto"/></td>
+                            <td className="cursor-pointer w-[40px]">
+                                {tabs != item.index && <IoIosArrowDown className="text-center mx-auto"/>}
+                                {tabs == item.index && <IoIosArrowDown className="text-center rotate-[180deg] mx-auto"/>}
+                            </td>
                             <td className="text-[17px] py-[5px] font-[700]">{item.index}</td>
                             <td className="text-[17px] py-[5px] font-[400]">{item.isbn}</td>
-                            <td className="text-[17px] py-[5px] font-[400]">{item.title}</td>
+                            <td className="text-[17px] py-[5px] font-[400] pr-[10px]">{item.title}</td>
                             <td className="text-[17px] py-[5px] font-[400]">{item.authors}</td>
                             <td className="text-[17px] py-[5px] font-[400]">{item.publisher}</td>
                         </tr>
@@ -56,8 +93,8 @@ function Tabel() {
                                 <td className="w-full" colSpan={5}>
                                     <div className="flex py-[20px] gap-[40px]">
                                         <div>
-                                            <div className="max-w-[300px]">
-                                                <img src="/image.png" alt="" />
+                                            <div className="w-[200px] h-[300px] text-center">
+                                                <img src={item.coverImage} alt="cover image" />
                                             </div>
                                             <button className="bg-[#2c70f4] cursor-pointer flex gap-[5px] px-[10px] mx-auto mt-[10px] items-center rounded-[20px]">
                                                 <p className="text-[17px] text-[#fff] px-[7x]">{item.likes}</p>
@@ -82,8 +119,12 @@ function Tabel() {
                         )}
                     </Fragment>
                 ))}
-            </thead>
+            </tbody>
         </table>
+        {loading && (
+            <div className="text-center py-[20px]">
+                <ClipLoader />
+            </div>)}
     </div>
   )
 }
