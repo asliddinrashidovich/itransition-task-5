@@ -18,7 +18,7 @@ function Tabel() {
 
   const lang = searchParams.get("lang") || "en-US";
   const like = searchParams.get("like") || 1;
-  const seed = searchParams.get("seed") || 40;
+  const seed = searchParams.get("seed") || 42;
   const review = searchParams.get("reviews") || 1;
 
   function toggleExpand(id) {

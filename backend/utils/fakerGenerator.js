@@ -24,7 +24,7 @@ function getBookSeed(seed, page, index) {
   return `${seed}-${page}-${index}`;
 }
 
-function generateBooks({ seed, locale = 'en-US', likes = 0, reviews = 0, page = 0, count = 20 }) {
+function generateBooks({ seed, locale = 'en-US', likes = 0, reviews = 0, page = 0, count = '20' }) {
   // Seed lokalizatsiya va sahifa raqamiga qarab qat'iy belgilanadi
   const fakerLocale = locales[locale] || en;
   const faker = new Faker({ locale: fakerLocale });
